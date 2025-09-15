@@ -9,9 +9,9 @@ import asyncio
 from typing import Dict, List, Any, Optional, AsyncGenerator
 from dotenv import load_dotenv
 
-from langchain_rag_engine.rag.hybrid_search import HybridSearchEngine, HybridSearchConfig
-from langchain_rag_engine.rag.cot_reasoning import ChainOfThoughtReasoning, LegalReasoningConfig
-from langchain_rag_engine.rag.intent_classifier import context_aware_intent_classifier, get_quick_reply
+from rag.hybrid_search import HybridSearchEngine, HybridSearchConfig
+from rag.cot_reasoning import ChainOfThoughtReasoning, LegalReasoningConfig
+from rag.intent_classifier import context_aware_intent_classifier, get_quick_reply
 
 load_dotenv()
 
@@ -327,3 +327,4 @@ def get_rag_system_status() -> Dict[str, Any]:
     """Get RAG system status"""
     system = get_advanced_rag_system()
     return system.get_system_status()
+

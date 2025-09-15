@@ -63,13 +63,13 @@ ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", f"{default_origins},{railway
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "*.localhost", "bharatlawainew-production.up.railway.app", "api.bharatlawai.com"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # --- Static Files ---
 # Mount uploads directory to serve user-uploaded files (avatars, etc.)

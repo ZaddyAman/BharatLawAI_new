@@ -63,7 +63,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
- app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # --- Static Files ---
 # Mount uploads directory to serve user-uploaded files (avatars, etc.)

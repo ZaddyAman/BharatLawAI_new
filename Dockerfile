@@ -80,7 +80,7 @@ COPY data/annotatedCentralActs/ /data/annotatedCentralActs/
 RUN mkdir /app
 
 # Create necessary directories with proper permissions
-RUN mkdir -p /uploads/avatars /logs /data && \
+RUN mkdir -p logs data && \
     chown -R appuser:appuser /app
 
 # Copy .env file if it exists (for Railway deployment)

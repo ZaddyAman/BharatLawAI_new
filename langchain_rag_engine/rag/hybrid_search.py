@@ -156,7 +156,7 @@ class HybridSearchEngine:
 
             # Initialize Voyage AI voyage-law-2
             try:
-                from langchain_community.embeddings import VoyageEmbeddings
+                from langchain_voyageai import VoyageAIEmbeddings
                 self.remote_embeddings = VoyageEmbeddings(
                     voyage_api_key=voyage_key,
                     model="voyage-law-2"  # Legal-optimized, 1024 dimensions
@@ -759,4 +759,5 @@ if __name__ == "__main__":
     print("\n📈 Search Analytics:")
     print(f"   Total Searches: {analytics.get('total_searches', 0)}")
     print(f"   Avg Results: {analytics.get('average_results_per_search', 0):.1f}")
+
     print(f"   Search Types: {analytics.get('search_type_distribution', {})}")

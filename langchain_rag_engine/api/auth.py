@@ -365,7 +365,6 @@ async def reset_password(request: ResetPasswordRequest, db: Session = Depends(ge
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 
-# Profile photo upload endpoint
 @router.post("/users/me/avatar")
 async def upload_profile_avatar(
     file: UploadFile = File(...),
@@ -390,28 +389,40 @@ async def upload_profile_avatar(
     file_extension = Path(file.filename).suffix.lower()
     unique_filename = f"{uuid.uuid4()}{file_extension}"
 
-    # Create uploads directory if it doesn't exist
-    uploads_dir = Path("uploads/avatars")
-    uploads_dir.mkdir(parents=True, exist_ok=True)
+    # Use Railway Volume path
+    uploads_dir = Path("/app/uploads/avatars")
+    
+    try:
+        # Create uploads directory if it doesn't exist
+        uploads_dir.mkdir(parents=True, exist_ok=True)
 
-    # Save file
-    file_path = uploads_dir / unique_filename
-    with open(file_path, "wb") as buffer:
-        buffer.write(content)
+        # Save file to Railway Volume
+        file_path = uploads_dir / unique_filename
+        with open(file_path, "wb") as buffer:
+            buffer.write(content)
 
-    # Generate avatar URL
-    avatar_url = f"/uploads/avatars/{unique_filename}"
+        # Generate avatar URL (accessible via Railway's static file serving)
+        avatar_url = f"/uploads/avatars/{unique_filename}"
 
-    # Update user in database
-    updated_user = crud.update_user(db, current_user.id, {"avatar_url": avatar_url})
+        # Update user in database
+        updated_user = crud.update_user(db, current_user.id, {"avatar_url": avatar_url})
 
-    if not updated_user:
-        # Clean up uploaded file if database update fails
-        if file_path.exists():
-            file_path.unlink()
-        raise HTTPException(status_code=500, detail="Failed to update user profile")
+        if not updated_user:
+            # Clean up uploaded file if database update fails
+            if file_path.exists():
+                file_path.unlink()
+            raise HTTPException(status_code=500, detail="Failed to update user profile")
 
-    return updated_user
+        return updated_user
+
+    except PermissionError:
+        # Fallback if volume is not properly configured
+        raise HTTPException(
+            status_code=500, 
+            detail="File upload temporarily unavailable. Please configure Railway Volume for uploads."
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 @router.post("/users/me/change-password")
 async def change_password(

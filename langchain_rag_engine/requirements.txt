@@ -1,0 +1,37 @@
+# Core Web Framework
+fastapi
+uvicorn
+pydantic[email]
+
+# AI/ML Dependencies (Remote Embeddings)
+python-dotenv
+beautifulsoup4
+requests
+httpx  # For remote API calls
+
+# Database
+sqlalchemy
+psycopg2-binary
+
+# Authentication
+passlib[bcrypt]==1.7.4
+bcrypt==4.0.1
+python-jose[cryptography]
+python-multipart
+
+# Data Processing
+kagglehub
+PyPDF2
+PyMuPDF
+
+# RAG System (Pinecone + Remote Embeddings)
+langchain
+langchain-community  # For remote embeddings
+langchain-huggingface  # For HuggingFace remote embeddings
+pinecone-client
+rank-bm25
+
+# Performance & Monitoring
+psutil
+uvloop
+cachetools

@@ -9,9 +9,9 @@ import asyncio
 from typing import Dict, List, Any, Optional, AsyncGenerator
 from dotenv import load_dotenv
 
-from .hybrid_search import HybridSearchEngine, HybridSearchConfig
-from .cot_reasoning import ChainOfThoughtReasoning, LegalReasoningConfig
-from .intent_classifier import context_aware_intent_classifier, get_quick_reply
+from langchain_rag_engine.rag.hybrid_search import HybridSearchEngine, HybridSearchConfig
+from langchain_rag_engine.rag.cot_reasoning import ChainOfThoughtReasoning, LegalReasoningConfig
+from langchain_rag_engine.rag.intent_classifier import context_aware_intent_classifier, get_quick_reply
 
 load_dotenv()
 
@@ -40,7 +40,7 @@ class AdvancedRAGSystem:
         """Lazy initialization of search engine"""
         if self._search_engine is None:
             print("🔍 [LAZY] Initializing Hybrid Search Engine...")
-            from .hybrid_search import HybridSearchConfig
+            from langchain_rag_engine.rag.hybrid_search import HybridSearchConfig
             search_config = HybridSearchConfig(
                 semantic_weight=0.4,
                 keyword_weight=0.3,
@@ -56,7 +56,7 @@ class AdvancedRAGSystem:
         """Lazy initialization of reasoning engine"""
         if self._reasoning_engine is None:
             print("🧠 [LAZY] Initializing Chain-of-Thought Reasoning...")
-            from .cot_reasoning import LegalReasoningConfig
+            from langchain_rag_engine.rag.cot_reasoning import LegalReasoningConfig
             reasoning_config = LegalReasoningConfig(
                 max_steps=8,
                 enable_evidence_validation=True,
@@ -217,7 +217,7 @@ LEGAL ANALYSIS:"""
                 api_key=os.environ.get("OPENROUTER_API_KEY"),
                 base_url="https://openrouter.ai/api/v1",
                 default_headers={
-                    "HTTP-Referer": "http://localhost:3000",
+                    "HTTP-Referer": "https://bharatlawainew-production.up.railway.app",
                     "X-Title": "BharatLawAI",
                 },
                 streaming=True,

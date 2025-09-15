@@ -9,7 +9,7 @@ from db.database import SessionLocal
 
 router = APIRouter()
 
-ACTS_DIR = os.getenv("ACTS_DIR", "/mnt/d/Indian Legal Assistant/data/annotatedCentralActs")
+ACTS_DIR = os.getenv("ACTS_DIR", "/app/data/annotatedCentralActs")
 
 # Dependency to get DB session
 def get_db():

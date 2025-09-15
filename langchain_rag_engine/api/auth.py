@@ -14,9 +14,9 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from db import crud, models, schemas
-from db.crud import get_password_hash
-from db.database import SessionLocal, engine
+from langchain_rag_engine.db import crud, models, schemas
+from langchain_rag_engine.db.crud import get_password_hash
+from langchain_rag_engine.db.database import SessionLocal, engine
 
 load_dotenv()
 
@@ -46,10 +46,10 @@ GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 
 # Frontend Configuration
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "https://bharatlawainew-production.up.railway.app")
 
 # OAuth Configuration - Railway compatible
-OAUTH_REDIRECT_URI = os.getenv("OAUTH_REDIRECT_URI", "http://localhost:8000")
+OAUTH_REDIRECT_URI = os.getenv("OAUTH_REDIRECT_URI", "https://bharatlawainew-production.up.railway.app")
 
 # Email Configuration
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")

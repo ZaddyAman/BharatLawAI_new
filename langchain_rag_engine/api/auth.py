@@ -14,9 +14,9 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-from langchain_rag_engine.db import crud, models, schemas
-from langchain_rag_engine.db.crud import get_password_hash
-from langchain_rag_engine.db.database import SessionLocal, engine
+from db import crud, models, schemas
+from db.crud import get_password_hash
+from db.database import SessionLocal, engine
 
 load_dotenv()
 

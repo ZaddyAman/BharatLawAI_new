@@ -72,36 +72,47 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # --- Static Files ---
+# Create symlink from Railway volume to app directory
 from pathlib import Path
+import os
 
-try:
-    uploads_dir = Path("uploads")
-    if not uploads_dir.exists():
-        # Try to create directory (may fail on Railway)
-        uploads_dir.mkdir(parents=True, exist_ok=True)
-        print("✅ Created uploads directory for Railway volume")
-    else:
-        print("✅ Uploads directory already exists")
-    
-    # Mount static files
-    app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-    print("✅ Static files mounted for uploads")
-    
-except PermissionError as e:
-    print(f"⚠️  Permission denied creating uploads directory: {e}")
-    print("ℹ️  Railway volume should handle this - proceeding without local directory creation")
-    
-    # Try to mount anyway (Railway volume might create it)
-    try:
-        app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
-        print("✅ Static files mounted (using Railway volume)")
-    except RuntimeError as mount_error:
-        print(f"⚠️  Could not mount static files: {mount_error}")
-        print("ℹ️  File uploads may not work until volume is properly configured")
+# Find the Railway volume
+volume_base = Path("/var/lib/containers/railwayapp/bind-mounts")
+uploads_target = Path("uploads")
+
+if volume_base.exists():
+    # Find volume directories
+    volume_dirs = list(volume_base.glob("*/vol_*"))
+    if volume_dirs:
+        actual_volume = volume_dirs[0]
+        print(f"📁 Found Railway volume: {actual_volume}")
         
-except Exception as e:
-    print(f"❌ Unexpected error with uploads directory: {e}")
-    print("ℹ️  Proceeding without static file mounting")
+        # Remove existing uploads directory/link
+        if uploads_target.exists():
+            if uploads_target.is_symlink():
+                uploads_target.unlink()
+            elif uploads_target.is_dir():
+                import shutil
+                shutil.rmtree(uploads_target)
+        
+        # Create symlink: uploads -> actual volume location
+        try:
+            uploads_target.symlink_to(actual_volume, target_is_directory=True)
+            print(f"✅ Created symlink: uploads -> {actual_volume}")
+            
+            # Now mount static files
+            app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+            print("✅ Static files mounted successfully")
+            
+        except Exception as e:
+            print(f"❌ Could not create symlink: {e}")
+            print("ℹ️  File uploads will work but static file serving may not")
+    else:
+        print("⚠️  No Railway volume directories found")
+else:
+    print("⚠️  Railway volume base directory not found")
+
+print("🚀 BharatLaw AI backend started successfully")
     
 
 # --- Signed URL Logic ---

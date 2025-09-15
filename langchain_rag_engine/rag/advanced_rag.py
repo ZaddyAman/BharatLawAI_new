@@ -40,7 +40,7 @@ class AdvancedRAGSystem:
         """Lazy initialization of search engine"""
         if self._search_engine is None:
             print("🔍 [LAZY] Initializing Hybrid Search Engine...")
-            from langchain_rag_engine.rag.hybrid_search import HybridSearchConfig
+            from rag.hybrid_search import HybridSearchConfig
             search_config = HybridSearchConfig(
                 semantic_weight=0.4,
                 keyword_weight=0.3,
@@ -56,7 +56,7 @@ class AdvancedRAGSystem:
         """Lazy initialization of reasoning engine"""
         if self._reasoning_engine is None:
             print("🧠 [LAZY] Initializing Chain-of-Thought Reasoning...")
-            from langchain_rag_engine.rag.cot_reasoning import LegalReasoningConfig
+            from rag.cot_reasoning import LegalReasoningConfig
             reasoning_config = LegalReasoningConfig(
                 max_steps=8,
                 enable_evidence_validation=True,
@@ -327,4 +327,5 @@ def get_rag_system_status() -> Dict[str, Any]:
     """Get RAG system status"""
     system = get_advanced_rag_system()
     return system.get_system_status()
+
 

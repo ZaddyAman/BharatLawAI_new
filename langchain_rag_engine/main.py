@@ -32,7 +32,7 @@ SECRET_KEY = os.environ.get("SECRET_KEY")
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY environment variable is required for security")
 
-API_BASE_URL = os.environ.get("API_BASE_URL", "http://localhost:8000")
+API_BASE_URL = os.environ.get("API_BASE_URL", "https://bharatlawainew-production.up.railway.app")
 MAX_CONCURRENT_STREAMS = int(os.environ.get("MAX_CONCURRENT_STREAMS", 3))
 
 # --- In-memory Registries ---
@@ -53,7 +53,13 @@ init_db()
 
 # --- Security & Performance Middleware ---
 # Get allowed origins from environment variable, fallback to localhost for development
-ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000").split(",")
+# Include Railway domain and custom domain for production
+default_origins = "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5174,http://127.0.0.1:5174,http://localhost:3000,http://127.0.0.1:3000"
+railway_domain_origins = "https://bharatlawainew-production.up.railway.app,http://bharatlawainew-production.up.railway.app"
+custom_domain_origins = "https://api.bharatlawai.com,http://api.bharatlawai.com"
+
+# Combine all domain origins
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", f"{default_origins},{railway_domain_origins},{custom_domain_origins}").split(",")
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,7 +69,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 app.add_middleware(GZipMiddleware, minimum_size=1000)
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "*.localhost", "bharatlawainew-production.up.railway.app", "api.bharatlawai.com"])
 
 # --- Static Files ---
 # Mount uploads directory to serve user-uploaded files (avatars, etc.)

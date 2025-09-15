@@ -51,5 +51,5 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
 
 def init_db():
-    import langchain_rag_engine.db.models as models
+    from . import models
     Base.metadata.create_all(bind=engine)

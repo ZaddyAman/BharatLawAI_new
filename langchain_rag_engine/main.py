@@ -72,8 +72,16 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
 # --- Static Files ---
-# Mount uploads directory to serve user-uploaded files (avatars, etc.)
+# Conditionally mount uploads directory (Railway volume compatibility)
+from pathlib import Path
+uploads_dir = Path("uploads")
+if not uploads_dir.exists():
+    # Create directory for Railway volume compatibility
+    uploads_dir.mkdir(parents=True, exist_ok=True)
+    print("✅ Created uploads directory for Railway volume")
+
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+print("✅ Static files mounted for uploads")
 
 # --- Signed URL Logic ---
 def sign_payload(payload: str) -> str:

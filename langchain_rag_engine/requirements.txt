@@ -28,7 +28,8 @@ PyMuPDF
 langchain
 langchain-community  # For remote embeddings
 langchain-huggingface  # For HuggingFace remote embeddings
-pinecone-client
+pinecone 
+langchain_openai
 rank-bm25
 
 # Performance & Monitoring

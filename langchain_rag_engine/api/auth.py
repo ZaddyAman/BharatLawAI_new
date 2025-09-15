@@ -46,10 +46,10 @@ GITHUB_CLIENT_ID = os.getenv("GITHUB_CLIENT_ID")
 GITHUB_CLIENT_SECRET = os.getenv("GITHUB_CLIENT_SECRET")
 
 # Frontend Configuration
-FRONTEND_URL = os.getenv("FRONTEND_URL", "https://bharatlawainew-production.up.railway.app")
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:5173")
 
-# OAuth Configuration - Railway compatible
-OAUTH_REDIRECT_URI = os.getenv("OAUTH_REDIRECT_URI", "https://bharatlawainew-production.up.railway.app")
+# Backend Configuration
+API_BASE_URL = os.getenv("API_BASE_URL", "http://localhost:8000")
 
 # Email Configuration
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
@@ -239,7 +239,7 @@ async def google_login():
     google_auth_url = (
         "https://accounts.google.com/o/oauth2/auth?"
         f"client_id={GOOGLE_CLIENT_ID}&"
-        f"redirect_uri={OAUTH_REDIRECT_URI}/auth/google/callback&"
+        f"redirect_uri={API_BASE_URL}/auth/google/callback&"
         "scope=openid email profile&"
         "response_type=code&"
         "access_type=offline"
@@ -256,7 +256,7 @@ async def google_callback(code: str, db: Session = Depends(get_db)):
         "client_secret": GOOGLE_CLIENT_SECRET,
         "code": code,
         "grant_type": "authorization_code",
-        "redirect_uri": f"{OAUTH_REDIRECT_URI}/auth/google/callback"
+        "redirect_uri": f"{API_BASE_URL}/auth/google/callback"
     }
 
     token_response = requests.post(token_url, data=token_data)
@@ -516,7 +516,7 @@ async def github_login():
     github_auth_url = (
         "https://github.com/login/oauth/authorize?"
         f"client_id={GITHUB_CLIENT_ID}&"
-        f"redirect_uri={OAUTH_REDIRECT_URI}/auth/github/callback&"
+        f"redirect_uri={API_BASE_URL}/auth/github/callback&"
         "scope=user:email&"
         "response_type=code"
     )
@@ -531,7 +531,7 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
         "client_id": GITHUB_CLIENT_ID,
         "client_secret": GITHUB_CLIENT_SECRET,
         "code": code,
-        "redirect_uri": f"{OAUTH_REDIRECT_URI}/auth/github/callback"
+        "redirect_uri": f"{API_BASE_URL}/auth/github/callback"
     }
 
     token_response = requests.post(token_url, data=token_data,

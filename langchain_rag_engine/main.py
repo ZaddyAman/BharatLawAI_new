@@ -71,6 +71,7 @@ app.add_middleware(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["*"])
 
+# --- Static Files ---
 from pathlib import Path
 
 try:

@@ -29,6 +29,7 @@ langchain
 langchain-community  # For remote embeddings
 langchain-huggingface  # For HuggingFace remote embeddings
 pinecone 
+langchain-voyageai
 langchain_openai
 rank-bm25
 

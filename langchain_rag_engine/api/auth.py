@@ -415,13 +415,20 @@ async def upload_profile_avatar(
 
         return updated_user
 
-    except PermissionError:
-        # Fallback if volume is not properly configured
+    except PermissionError as e:
+        print(f"❌ PermissionError: {e}")
+        print(f"   Uploads dir: {uploads_dir}")
+        print(f"   Dir exists: {uploads_dir.exists()}")
+        if uploads_dir.exists():
+            print(f"   Dir permissions: {oct(uploads_dir.stat().st_mode)}")
         raise HTTPException(
             status_code=500, 
-            detail="File upload temporarily unavailable. Please configure Railway Volume for uploads."
+            detail=f"Permission denied. Volume may not be properly mounted. Error: {str(e)}"
         )
     except Exception as e:
+        print(f"❌ Upload error: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")
 
 @router.post("/users/me/change-password")

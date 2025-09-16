@@ -543,44 +543,54 @@ async def github_login():
 @router.get("/github/callback")
 async def github_callback(code: str, db: Session = Depends(get_db)):
     """Handle GitHub OAuth callback"""
-    # Exchange code for access token
-    token_url = "https://github.com/login/oauth/access_token"
-    token_data = {
-        "client_id": GITHUB_CLIENT_ID,
-        "client_secret": GITHUB_CLIENT_SECRET,
-        "code": code,
-        "redirect_uri": f"{API_BASE_URL}/auth/github/callback"
-    }
+    try:
+        # Exchange code for access token
+        token_url = "https://github.com/login/oauth/access_token"
+        token_data = {
+            "client_id": GITHUB_CLIENT_ID,
+            "client_secret": GITHUB_CLIENT_SECRET,
+            "code": code,
+            "redirect_uri": f"{API_BASE_URL}/auth/github/callback"
+        }
 
-    token_response = requests.post(token_url, data=token_data,
-                                  headers={"Accept": "application/json"})
-    token_json = token_response.json()
+        token_response = requests.post(token_url, data=token_data,
+                                      headers={"Accept": "application/json"})
+        token_json = token_response.json()
 
-    if "error" in token_json:
-        raise HTTPException(status_code=400, detail="OAuth authentication failed")
+        if "error" in token_json:
+            print(f"GitHub OAuth error: {token_json}")
+            raise HTTPException(status_code=400, detail="OAuth authentication failed")
 
-    # Get user info
-    user_url = "https://api.github.com/user"
-    headers = {"Authorization": f"token {token_json['access_token']}"}
-    user_response = requests.get(user_url, headers=headers)
-    user_info = user_response.json()
+        # Get user info
+        user_url = "https://api.github.com/user"
+        headers = {"Authorization": f"token {token_json['access_token']}"}
+        user_response = requests.get(user_url, headers=headers)
+        user_info = user_response.json()
 
-    # Get user email
-    email_url = "https://api.github.com/user/emails"
-    email_response = requests.get(email_url, headers=headers)
-    emails = email_response.json()
-    primary_email = next((email['email'] for email in emails if email['primary']), user_info.get('email'))
+        # Get user email with proper error handling
+        email_url = "https://api.github.com/user/emails"
+        email_response = requests.get(email_url, headers=headers)
+        emails = email_response.json()
 
-    # Create or update user
-    user = crud.get_user_by_email(db, email=primary_email)
-    if not user:
-        user = crud.create_oauth_user(db, {
-            'email': primary_email,
-            'full_name': user_info.get('name') or user_info.get('login'),
-            'avatar_url': user_info.get('avatar_url'),
-            'oauth_provider': 'github',
-            'oauth_id': str(user_info['id'])
-        })
+        # Debug logging
+        print(f"GitHub emails response: {emails}")
+        print(f"Emails type: {type(emails)}")
+
+        # Handle different response formats from GitHub API
+        if isinstance(emails, list) and emails:
+            # Normal case: list of email objects
+            primary_email = next((email['email'] for email in emails if email.get('primary')), user_info.get('email'))
+        elif isinstance(emails, dict) and 'email' in emails:
+            # Sometimes GitHub returns a single email object
+            primary_email = emails['email']
+        elif isinstance(emails, str):
+            # Sometimes GitHub returns just a string
+            primary_email = emails
+        else:
+            # Fallback to user info email
+            primary_email = user_info.get('email')
+
+        print(f"Using email: {primary_email}")
 
     # Create JWT token
     access_token = create_access_token(data={"sub": user.email})

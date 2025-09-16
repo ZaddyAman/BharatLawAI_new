@@ -158,18 +158,19 @@ class HybridSearchEngine:
             try:
                 import voyageai
 
-                # Initialize the client with API key
-                voyageai.api_key = voyage_key
+                # Create Voyage AI client (automatically uses VOYAGE_API_KEY env var)
+                vo = voyageai.Client()
 
                 # Create a wrapper class for Voyage AI embeddings
                 class VoyageEmbeddings:
                     def __init__(self, model="voyage-law-2"):
                         self.model = model
-                        self.client = voyageai
+                        self.client = voyageai.Client()  # Create new client instance
 
                     def embed_query(self, text: str) -> List[float]:
                         """Embed a single query using Voyage AI"""
                         try:
+                            # Use the client instance to embed
                             result = self.client.embed(
                                 texts=[text],
                                 model=self.model,
@@ -183,6 +184,7 @@ class HybridSearchEngine:
                     def embed_documents(self, texts: List[str]) -> List[List[float]]:
                         """Embed multiple documents using Voyage AI"""
                         try:
+                            # Use the client instance to embed
                             result = self.client.embed(
                                 texts=texts,
                                 model=self.model,

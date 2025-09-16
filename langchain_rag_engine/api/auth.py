@@ -542,7 +542,7 @@ async def github_login():
 
 @router.get("/github/callback")
 async def github_callback(code: str, db: Session = Depends(get_db)):
-    """Handle GitHub OAuth callback"""
+    """Handle GitHub OAuth callback with improved error handling for emails"""
     try:
         # Exchange code for access token
         token_url = "https://github.com/login/oauth/access_token"
@@ -552,48 +552,61 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
             "code": code,
             "redirect_uri": f"{API_BASE_URL}/auth/github/callback"
         }
-
-        token_response = requests.post(token_url, data=token_data,
-                                      headers={"Accept": "application/json"})
+        # Ask for JSON response
+        token_response = requests.post(token_url, data=token_data, headers={"Accept": "application/json"})
         token_json = token_response.json()
+        print("GitHub token response:", token_json)
 
-        if "error" in token_json:
-            print(f"GitHub OAuth error: {token_json}")
-            raise HTTPException(status_code=400, detail="OAuth authentication failed")
+        access_token = token_json.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=400, detail=f"Failed to get access token: {token_json}")
 
-        # Get user info
+        headers = {"Authorization": f"token {access_token}", "Accept": "application/vnd.github+json"}
+
+        # Get primary user info (may include email if public)
         user_url = "https://api.github.com/user"
-        headers = {"Authorization": f"token {token_json['access_token']}"}
         user_response = requests.get(user_url, headers=headers)
         user_info = user_response.json()
+        print("GitHub /user response:", user_info)
 
-        # Get user email with proper error handling
+        # Try to fetch emails (preferred) - requires user:email scope for OAuth apps
         email_url = "https://api.github.com/user/emails"
         email_response = requests.get(email_url, headers=headers)
         emails = email_response.json()
+        print("GitHub /user/emails response:", emails)
 
-        # Debug logging
-        print(f"GitHub emails response: {emails}")
-        print(f"Emails type: {type(emails)}")
+        primary_email = None
 
-        # Handle different response formats from GitHub API
+        # Handle a variety of responses
         if isinstance(emails, list) and emails:
-            # Normal case: list of email objects
-            primary_email = next((email['email'] for email in emails if email.get('primary')), user_info.get('email'))
-        elif isinstance(emails, dict) and 'email' in emails:
-            # Sometimes GitHub returns a single email object
-            primary_email = emails['email']
-        elif isinstance(emails, str):
-            # Sometimes GitHub returns just a string
-            primary_email = emails
+            # prefer primary verified email
+            primary_email = next((e.get("email") for e in emails if e.get("primary") and e.get("verified")), None)
+            if not primary_email:
+                # fallback to first verified email
+                primary_email = next((e.get("email") for e in emails if e.get("verified")), emails[0].get("email"))
+        elif isinstance(emails, dict):
+            # Error from GitHub (e.g., Resource not accessible by integration)
+            msg = emails.get("message")
+            print("GitHub emails returned a dict with message:", msg)
+            # If message indicates integration/403, fall back to user_info['email'] if present
+            primary_email = user_info.get("email")
         else:
-            # Fallback to user info email
-            primary_email = user_info.get('email')
+            # Unexpected format - fallback to user_info
+            primary_email = user_info.get("email")
+
+        # If we still don't have an email, give a helpful error
+        if not primary_email:
+            # Helpful error: suggest making email public or allow user:email scope
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Could not retrieve email from GitHub. "
+                    "Possible reasons: user email is private, or the OAuth token lacks the user:email scope. "
+                    "Ask the user to make their email public or ensure your GitHub OAuth app requests the user:email scope."
+                ),
+            )
 
         print(f"Using email: {primary_email}")
-
-        if not primary_email:
-            raise HTTPException(status_code=400, detail="Could not retrieve email from GitHub")
 
         # Create or update user
         user = crud.get_user_by_email(db, email=primary_email)
@@ -603,16 +616,20 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
                 'full_name': user_info.get('name') or user_info.get('login'),
                 'avatar_url': user_info.get('avatar_url'),
                 'oauth_provider': 'github',
-                'oauth_id': str(user_info['id'])
+                'oauth_id': str(user_info.get('id'))
             })
 
         # Create JWT token
-        access_token = create_access_token(data={"sub": user.email})
+        access_token_jwt = create_access_token(data={"sub": user.email})
 
         # Redirect to frontend with token
-        frontend_url = f"{FRONTEND_URL}/auth/callback?token={access_token}"
+        frontend_url = f"{FRONTEND_URL}/auth/callback?token={access_token_jwt}"
         return RedirectResponse(frontend_url, status_code=302)
 
+    except HTTPException:
+        # Re-raise HTTPExceptions so FastAPI handles them
+        raise
     except Exception as e:
         print(f"GitHub OAuth callback error: {e}")
         raise HTTPException(status_code=500, detail=f"OAuth processing failed: {str(e)}")
+

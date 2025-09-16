@@ -27,7 +27,8 @@ PyMuPDF
 # RAG System (Pinecone + Remote Embeddings)
 langchain
 langchain-community  # For remote embeddings
-langchain-huggingface  # For HuggingFace remote embeddings
+langchain-huggingface # For HuggingFace remote embeddings
+voyageai
 pinecone 
 langchain-voyageai
 langchain_openai

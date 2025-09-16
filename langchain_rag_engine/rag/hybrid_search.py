@@ -142,7 +142,7 @@ class HybridSearchEngine:
             traceback.print_exc()
 
     def _initialize_remote_embeddings(self):
-        """Initialize Voyage AI voyage-law-2 for legal document embeddings"""
+        """Initialize Voyage AI voyage-law-2 for legal document embeddings using official API"""
         try:
             # ONLY use Voyage AI voyage-law-2 (legal-optimized model)
             voyage_key = os.environ.get("VOYAGE_API_KEY")
@@ -154,23 +154,67 @@ class HybridSearchEngine:
                 self.remote_embeddings = None
                 return
 
-            # Initialize Voyage AI voyage-law-2
+            # Initialize Voyage AI using official Python client
             try:
-                from langchain_voyageai import VoyageAIEmbeddings
-                self.remote_embeddings = VoyageEmbeddings(
-                    voyage_api_key=voyage_key,
-                    model="voyage-law-2"  # Legal-optimized, 1024 dimensions
-                )
+                import voyageai
+
+                # Initialize the client with API key
+                voyageai.api_key = voyage_key
+
+                # Create a wrapper class for Voyage AI embeddings
+                class VoyageEmbeddings:
+                    def __init__(self, model="voyage-law-2"):
+                        self.model = model
+                        self.client = voyageai
+
+                    def embed_query(self, text: str) -> List[float]:
+                        """Embed a single query using Voyage AI"""
+                        try:
+                            result = self.client.embed(
+                                texts=[text],
+                                model=self.model,
+                                input_type="query"
+                            )
+                            return result.embeddings[0]
+                        except Exception as e:
+                            print(f"❌ Voyage AI query embedding failed: {e}")
+                            raise
+
+                    def embed_documents(self, texts: List[str]) -> List[List[float]]:
+                        """Embed multiple documents using Voyage AI"""
+                        try:
+                            result = self.client.embed(
+                                texts=texts,
+                                model=self.model,
+                                input_type="document"
+                            )
+                            return result.embeddings
+                        except Exception as e:
+                            print(f"❌ Voyage AI document embedding failed: {e}")
+                            raise
+
+                # Initialize the embeddings wrapper
+                self.remote_embeddings = VoyageEmbeddings(model="voyage-law-2")
+
+                # Test the connection
+                test_embedding = self.remote_embeddings.embed_query("test")
                 print("✅ Remote embeddings initialized (Voyage AI voyage-law-2)")
                 print("   ⚖️  Legal-optimized model - perfect for Indian law documents!")
                 print("   📏 1024 dimensions - matches your existing Pinecone vectors!")
                 print("   🚀 No re-embedding needed - production ready!")
-                print("   🎯 Test results: 8 matches found, vectors are compatible!")
+                print(f"   🧪 Test embedding successful: {len(test_embedding)} dimensions")
+
+            except ImportError:
+                print("❌ voyageai package not installed!")
+                print("   💡 Install with: pip install voyageai")
+                print("   💡 Official docs: https://docs.voyageai.com/docs/api-key-and-installation")
+                self.remote_embeddings = None
 
             except Exception as e:
                 print(f"❌ Voyage AI initialization failed: {e}")
                 print("   💡 Check your VOYAGE_API_KEY")
                 print("   💡 Make sure you have credits in your Voyage AI account")
+                print("   💡 Verify your API key at: https://dash.voyageai.com/")
                 self.remote_embeddings = None
 
         except Exception as e:

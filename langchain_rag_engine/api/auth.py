@@ -592,9 +592,27 @@ async def github_callback(code: str, db: Session = Depends(get_db)):
 
         print(f"Using email: {primary_email}")
 
-    # Create JWT token
-    access_token = create_access_token(data={"sub": user.email})
+        if not primary_email:
+            raise HTTPException(status_code=400, detail="Could not retrieve email from GitHub")
 
-    # Redirect to frontend with token
-    frontend_url = f"{FRONTEND_URL}/auth/callback?token={access_token}"
-    return RedirectResponse(frontend_url, status_code=302)
+        # Create or update user
+        user = crud.get_user_by_email(db, email=primary_email)
+        if not user:
+            user = crud.create_oauth_user(db, {
+                'email': primary_email,
+                'full_name': user_info.get('name') or user_info.get('login'),
+                'avatar_url': user_info.get('avatar_url'),
+                'oauth_provider': 'github',
+                'oauth_id': str(user_info['id'])
+            })
+
+        # Create JWT token
+        access_token = create_access_token(data={"sub": user.email})
+
+        # Redirect to frontend with token
+        frontend_url = f"{FRONTEND_URL}/auth/callback?token={access_token}"
+        return RedirectResponse(frontend_url, status_code=302)
+
+    except Exception as e:
+        print(f"GitHub OAuth callback error: {e}")
+        raise HTTPException(status_code=500, detail=f"OAuth processing failed: {str(e)}")
